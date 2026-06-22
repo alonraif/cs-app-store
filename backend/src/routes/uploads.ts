@@ -78,7 +78,7 @@ router.post(
         return
       }
       const filePath = `/uploads/installers/${req.file.filename}`
-      res.json({ path: filePath })
+      res.json({ path: filePath, originalName: req.file.originalname })
     } catch (err) {
       next(err)
     }

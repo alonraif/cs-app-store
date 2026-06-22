@@ -38,7 +38,8 @@ model Tool {
   repoUrl          String?
 
   // Desktop-specific
-  downloadUrl      String?
+  downloadUrl        String?
+  installerFilename  String?
 
   // Webapp-specific
   launchUrl        String?

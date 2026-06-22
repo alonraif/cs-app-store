@@ -192,13 +192,16 @@ function PrimaryAction({ tool, accent }: { tool: Tool; accent: string }) {
 
   if (tool.type === 'desktop') {
     return (
-      <a href={tool.downloadUrl ?? '#'} download style={{
-        display: 'inline-flex', alignItems: 'center', gap: 8,
-        padding: '10px 22px', background: accent, color: '#0A0D14',
-        borderRadius: 'var(--r-md)', fontWeight: 700, fontSize: '0.875rem',
-        textDecoration: 'none', opacity: tool.downloadUrl ? 1 : 0.4,
-        pointerEvents: tool.downloadUrl ? 'auto' : 'none', fontFamily: 'var(--font-mono)',
-      }}>
+      <a
+        href={tool.downloadUrl ?? '#'}
+        download={tool.installerFilename || true}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '10px 22px', background: accent, color: '#0A0D14',
+          borderRadius: 'var(--r-md)', fontWeight: 700, fontSize: '0.875rem',
+          textDecoration: 'none', opacity: tool.downloadUrl ? 1 : 0.4,
+          pointerEvents: tool.downloadUrl ? 'auto' : 'none', fontFamily: 'var(--font-mono)',
+        }}>
         <Download size={15} /> Download{tool.version ? ` v${tool.version}` : ''}
       </a>
     )

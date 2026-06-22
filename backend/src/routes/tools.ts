@@ -19,6 +19,7 @@ const toolSchema = z
     installCommand: z.string().optional(),
     repoUrl: z.string().optional(),
     downloadUrl: z.string().optional(),
+    installerFilename: z.string().optional(),
     launchUrl: z.string().optional(),
     installationInstructions: z.string().optional(),
     usageInstructions: z.string().optional(),

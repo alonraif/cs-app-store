@@ -20,6 +20,7 @@ const EMPTY: ToolFormData = {
   installCommand: '',
   repoUrl: '',
   downloadUrl: '',
+  installerFilename: '',
   launchUrl: '',
   installationInstructions: '',
   usageInstructions: '',
@@ -65,6 +66,7 @@ export default function AdminToolForm() {
       installCommand: existingTool.installCommand ?? '',
       repoUrl: existingTool.repoUrl ?? '',
       downloadUrl: existingTool.downloadUrl ?? '',
+      installerFilename: existingTool.installerFilename ?? '',
       launchUrl: existingTool.launchUrl ?? '',
       installationInstructions: existingTool.installationInstructions ?? '',
       usageInstructions: existingTool.usageInstructions ?? '',
@@ -131,8 +133,9 @@ export default function AdminToolForm() {
     if (!file) return
     setUploading('installer')
     try {
-      const path = await api.uploads.installer(file)
+      const { path, originalName } = await api.uploads.installer(file)
       set('downloadUrl', path)
+      set('installerFilename', originalName)
     } catch {
       alert('Installer upload failed')
     } finally {

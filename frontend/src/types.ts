@@ -19,6 +19,7 @@ export interface Tool {
   installCommand: string | null
   repoUrl: string | null
   downloadUrl: string | null
+  installerFilename: string | null
   launchUrl: string | null
   installationInstructions: string | null
   usageInstructions: string | null
@@ -39,6 +40,7 @@ export interface ToolFormData {
   installCommand: string
   repoUrl: string
   downloadUrl: string
+  installerFilename: string
   launchUrl: string
   installationInstructions: string
   usageInstructions: string

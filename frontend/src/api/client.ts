@@ -58,7 +58,7 @@ export const api = {
       const data = (await res.json()) as { paths: string[] }
       return data.paths
     },
-    installer: async (file: File): Promise<string> => {
+    installer: async (file: File): Promise<{ path: string; originalName: string }> => {
       const form = new FormData()
       form.append('installer', file)
       const res = await fetch(`${BASE}/api/uploads/installer`, {
@@ -67,8 +67,7 @@ export const api = {
         headers: adminHeaders(),
       })
       if (!res.ok) throw new Error('Upload failed')
-      const data = (await res.json()) as { path: string }
-      return data.path
+      return res.json() as Promise<{ path: string; originalName: string }>
     },
   },
 }
