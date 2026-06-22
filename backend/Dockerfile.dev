@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache openssl
+
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm install
+
+RUN mkdir -p /app/uploads/screenshots /app/uploads/installers
+
+EXPOSE 3001
+
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx src/seed.ts && npm run dev"]

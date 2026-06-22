@@ -1,0 +1,43 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ToolType {
+  cli
+  desktop
+  webapp
+}
+
+model Tool {
+  id               String   @id @default(uuid())
+  name             String
+  shortDescription String
+  longDescription  String   @default("")
+  category         String
+  type             ToolType
+  version          String?
+  owner            String
+  ownerContact     String
+  screenshots      String[]
+
+  // CLI-specific
+  installCommand   String?
+  repoUrl          String?
+
+  // Desktop-specific
+  downloadUrl      String?
+
+  // Webapp-specific
+  launchUrl        String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("tools")
+}

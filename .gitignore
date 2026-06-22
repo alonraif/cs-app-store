@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+*.env.local
+.DS_Store
+
+# Uploads (don't commit user-uploaded files)
+backend/uploads/
+
+# Frontend build
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Docker
+*.log

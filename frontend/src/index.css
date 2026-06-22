@@ -1,0 +1,184 @@
+/* ─── Design tokens ─────────────────────────────────────────── */
+:root {
+  /* Ground */
+  --ground:          #111318;
+  --surface:         #181C24;
+  --surface-raised:  #1E2430;
+  --border:          #252C3B;
+  --border-hover:    #313D52;
+
+  /* Accent — broadcast signal green */
+  --accent:          #00D97E;
+  --accent-dim:      rgba(0, 217, 126, 0.12);
+  --accent-hover:    #00C46F;
+  --accent-blue:     #4D9FFF;
+  --accent-blue-dim: rgba(77, 159, 255, 0.12);
+
+  /* Text */
+  --text-hi:         #F0F4FF;
+  --text-mid:        #7C8CA8;
+  --text-lo:         #3E4A5E;
+
+  /* Semantic aliases (used by admin, header, components) */
+  --color-bg:             var(--ground);
+  --color-surface:        var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border:         var(--border);
+  --color-border-hover:   var(--border-hover);
+  --color-primary:        var(--accent);
+  --color-primary-hover:  var(--accent-hover);
+  --color-primary-light:  var(--accent-dim);
+  --color-primary-text:   var(--accent);
+  --color-text-primary:   var(--text-hi);
+  --color-text-secondary: var(--text-mid);
+  --color-text-muted:     var(--text-lo);
+  --color-danger:         #FF4D6A;
+  --color-danger-hover:   #E63D59;
+  --color-danger-light:   rgba(255, 77, 106, 0.1);
+  --color-success:        var(--accent);
+  --color-success-light:  var(--accent-dim);
+  --color-admin-bg:       #0A0D14;
+  --color-admin-border:   #161B26;
+
+  /* Type badges */
+  --badge-cli-bg:       rgba(124, 140, 168, 0.12);
+  --badge-cli-text:     #9AAAC0;
+  --badge-cli-border:   #252C3B;
+  --badge-desktop-bg:   rgba(77, 159, 255, 0.1);
+  --badge-desktop-text: #4D9FFF;
+  --badge-desktop-border: rgba(77, 159, 255, 0.25);
+  --badge-webapp-bg:    rgba(0, 217, 126, 0.1);
+  --badge-webapp-text:  #00D97E;
+  --badge-webapp-border: rgba(0, 217, 126, 0.25);
+  --badge-cat-bg:       rgba(77, 159, 255, 0.08);
+  --badge-cat-text:     #4D9FFF;
+  --badge-cat-border:   rgba(77, 159, 255, 0.2);
+
+  /* Shape */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.6);
+
+  /* Fonts */
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ─── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; color-scheme: dark; }
+body {
+  font-family: var(--font-sans);
+  background: var(--ground);
+  color: var(--text-hi);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1,h2,h3,h4,h5,h6 { margin: 0; line-height: 1.3; font-weight: 600; color: var(--text-hi); }
+p { margin: 0; }
+input, textarea, select, button { font-family: var(--font-sans); font-size: 0.9rem; }
+button { cursor: pointer; }
+
+/* ─── Layout ─────────────────────────────────────────────────── */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+           overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+/* ─── Animations ─────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.35s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeInUp { animation: none; opacity: 1; }
+}
+
+/* ─── Skeleton ───────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-raised) 50%, var(--surface) 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.6s ease infinite;
+  border-radius: var(--r-sm);
+}
+
+/* ─── Markdown body ──────────────────────────────────────────── */
+.markdown-body { color: var(--text-mid); line-height: 1.75; }
+.markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4 {
+  color: var(--text-hi); margin-top: 1.5em; margin-bottom: 0.5em;
+}
+.markdown-body h2 { font-size: 1.1rem; font-family: var(--font-mono); }
+.markdown-body h3 { font-size: 0.95rem; }
+.markdown-body p { margin-bottom: 0.875em; }
+.markdown-body ul, .markdown-body ol { padding-left: 1.5em; margin-bottom: 0.875em; }
+.markdown-body li { margin-bottom: 0.2em; }
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.15em 0.4em;
+  color: var(--accent);
+}
+.markdown-body pre {
+  background: #0A0D14;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px;
+  overflow-x: auto;
+  margin-bottom: 0.875em;
+}
+.markdown-body pre code {
+  background: none; border: none; padding: 0;
+  color: #C8D3E8; font-size: 0.85rem;
+}
+.markdown-body a { color: var(--accent); }
+.markdown-body strong { font-weight: 600; color: var(--text-hi); }
+.markdown-body blockquote {
+  border-left: 3px solid var(--border); padding-left: 1em; color: var(--text-lo);
+}
+.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 0.875em; }
+.markdown-body th, .markdown-body td {
+  border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+}
+.markdown-body th { background: var(--surface); font-weight: 600; }
+
+/* ─── Form inputs (shared, dark) ─────────────────────────────── */
+input[type="text"], input[type="url"], input[type="password"],
+input[type="email"], input[type="search"], textarea, select {
+  background: var(--surface);
+  color: var(--text-hi);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  outline: none;
+  transition: border-color 0.15s;
+}
+input[type="text"]:focus, input[type="url"]:focus, input[type="password"]:focus,
+input[type="email"]:focus, input[type="search"]:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+}
+select option { background: var(--surface); color: var(--text-hi); }
