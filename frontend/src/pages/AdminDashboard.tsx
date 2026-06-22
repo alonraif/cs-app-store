@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash2, AlertTriangle, LogOut, Tag, X, Download, Upload, CheckCircle } from 'lucide-react'
+import { getCategoryMeta } from '../categoryConfig'
 import Header from '../components/Header'
 import { TypeBadge, CategoryBadge } from '../components/Badge'
 import { api } from '../api/client'
@@ -353,9 +354,15 @@ export default function AdminDashboard() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                          {cat.name}
-                        </span>
+                        {(() => {
+                          const { icon: CatIcon, color } = getCategoryMeta(cat.name)
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                              <CatIcon size={14} strokeWidth={2} style={{ color, flexShrink: 0 }} />
+                              {cat.name}
+                            </span>
+                          )
+                        })()}
                         <span style={{
                           fontSize: '0.72rem', fontFamily: 'var(--font-mono)',
                           padding: '2px 8px', borderRadius: 100,

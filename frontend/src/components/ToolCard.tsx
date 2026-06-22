@@ -4,18 +4,7 @@ import { Terminal, Monitor, Globe } from 'lucide-react'
 import type { Tool } from '../types'
 import type { JSX } from 'react'
 import { TypeBadge } from './Badge'
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Diagnostics: '#FF8C42',
-  Monitoring:  '#00D97E',
-  Automation:  '#4D9FFF',
-  Security:    '#FF4D6A',
-  Networking:  '#00E5FF',
-  DevOps:      '#B84DFF',
-  QA:          '#FFD93D',
-  Analytics:   '#4DFFDB',
-}
-function catColor(c: string) { return CATEGORY_COLORS[c] ?? '#5A6580' }
+import { getCategoryMeta } from '../categoryConfig'
 
 const TYPE_ICON: Record<string, JSX.Element> = {
   cli:     <Terminal size={16} />,
@@ -27,7 +16,7 @@ interface Props { tool: Tool; index: number }
 
 export default function ToolCard({ tool, index }: Props) {
   const [hovered, setHovered] = useState(false)
-  const accent = catColor(tool.category)
+  const { color: accent, icon: CategoryIcon } = getCategoryMeta(tool.category)
 
   return (
     <Link
@@ -84,7 +73,12 @@ export default function ToolCard({ tool, index }: Props) {
 
           {/* Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: accent, letterSpacing: '0.04em', fontFamily: 'var(--font-mono)' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontSize: '0.68rem', fontWeight: 600, color: accent,
+              letterSpacing: '0.04em', fontFamily: 'var(--font-mono)',
+            }}>
+              <CategoryIcon size={11} strokeWidth={2.2} />
               {tool.category.toUpperCase()}
             </span>
             <span style={{

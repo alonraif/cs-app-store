@@ -1,20 +1,14 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Copy, Check, ExternalLink, Download, User, Tag, Clock, Hash, Terminal, Monitor, Globe } from 'lucide-react'
+import { ArrowLeft, Copy, Check, ExternalLink, Download, User, Tag, Clock, Terminal, Monitor, Globe } from 'lucide-react'
 import Header from '../components/Header'
 import { TypeBadge, CategoryBadge } from '../components/Badge'
 import MarkdownContent from '../components/MarkdownContent'
 import ScreenshotGallery from '../components/ScreenshotGallery'
 import { api } from '../api/client'
+import { getCategoryMeta } from '../categoryConfig'
 import type { Tool } from '../types'
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Diagnostics: '#FF8C42', Monitoring: '#00D97E', Automation: '#4D9FFF',
-  Security: '#FF4D6A', Networking: '#00E5FF', DevOps: '#B84DFF',
-  QA: '#FFD93D', Analytics: '#4DFFDB',
-}
-function catColor(c: string) { return CATEGORY_COLORS[c] ?? '#5A6580' }
 const TYPE_ICON: Record<string, React.ReactNode> = {
   cli: <Terminal size={22} />, desktop: <Monitor size={22} />, webapp: <Globe size={22} />,
 }
@@ -32,7 +26,7 @@ export default function ToolDetail() {
   if (isLoading) return <Shell><div style={{ padding: '60px 0', textAlign: 'center', fontFamily: 'var(--font-mono)', color: 'var(--text-lo)', fontSize: '0.875rem' }}>loading…</div></Shell>
   if (isError || !tool) return <Shell><div style={{ padding: '60px 0', textAlign: 'center' }}><p style={{ color: 'var(--color-danger)', marginBottom: 16 }}>tool not found</p><button onClick={() => navigate(-1)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>← go back</button></div></Shell>
 
-  const accent = catColor(tool.category)
+  const { color: accent, icon: CategoryIcon } = getCategoryMeta(tool.category)
 
   return (
     <Shell>
@@ -121,9 +115,9 @@ export default function ToolDetail() {
                 <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-lo)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Details</span>
               </div>
               <div>
-                <MetaRow icon={<User size={13} />}  label="Owner"    value={tool.owner} />
-                <MetaRow icon={<Tag size={13} />}   label="Contact"  value={tool.ownerContact} />
-                <MetaRow icon={<Hash size={13} />}  label="Category" value={tool.category} />
+                <MetaRow icon={<User size={13} />}           label="Owner"    value={tool.owner} />
+                <MetaRow icon={<Tag size={13} />}            label="Contact"  value={tool.ownerContact} />
+                <MetaRow icon={<CategoryIcon size={13} />}  label="Category" value={tool.category} />
                 {tool.version && <MetaRow icon={<Clock size={13} />} label="Version"  value={`v${tool.version}`} mono />}
                 <MetaRow icon={<Clock size={13} />} label="Updated"  value={new Date(tool.updatedAt).toLocaleDateString()} />
               </div>

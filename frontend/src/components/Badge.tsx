@@ -1,4 +1,5 @@
 import type { ToolType } from '../types'
+import { getCategoryMeta } from '../categoryConfig'
 
 const TYPE_CONFIG: Record<ToolType, { label: string; bg: string; text: string; border: string }> = {
   cli:     { label: 'CLI',     bg: 'var(--badge-cli-bg)',     text: 'var(--badge-cli-text)',     border: 'var(--badge-cli-border)'     },
@@ -24,14 +25,16 @@ export function TypeBadge({ type }: { type: ToolType }) {
 }
 
 export function CategoryBadge({ category }: { category: string }) {
+  const { icon: Icon, color } = getCategoryMeta(category)
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center',
+      display: 'inline-flex', alignItems: 'center', gap: 5,
       padding: '3px 8px',
       borderRadius: 'var(--r-sm)',
       fontSize: '0.68rem', fontWeight: 500,
-      background: 'var(--badge-cat-bg)', color: 'var(--badge-cat-text)', border: '1px solid var(--badge-cat-border)',
+      background: `${color}12`, color, border: `1px solid ${color}30`,
     }}>
+      <Icon size={10} strokeWidth={2.2} />
       {category}
     </span>
   )
