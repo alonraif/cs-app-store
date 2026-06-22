@@ -1,17 +1,27 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, AlertTriangle, LogOut, Tag, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, AlertTriangle, LogOut, Tag, X, Download, Upload, CheckCircle } from 'lucide-react'
 import Header from '../components/Header'
 import { TypeBadge, CategoryBadge } from '../components/Badge'
 import { api } from '../api/client'
 import { useAdminAuth } from '../hooks/useAdminAuth'
 import type { Tool, Category } from '../types'
 
+interface ImportPreview {
+  tools: number
+  categories: number
+  raw: unknown
+}
+
 export default function AdminDashboard() {
   const qc = useQueryClient()
   const { logout } = useAdminAuth()
+  const importInputRef = useRef<HTMLInputElement>(null)
+
   const [confirmDelete, setConfirmDelete] = useState<Tool | null>(null)
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
+  const [importSuccess, setImportSuccess] = useState<{ tools: number; categories: number } | null>(null)
   const [newCategory, setNewCategory] = useState('')
   const [catError, setCatError] = useState('')
 
@@ -50,11 +60,59 @@ export default function AdminDashboard() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
   })
 
+  const importMutation = useMutation({
+    mutationFn: (data: unknown) => api.admin.import(data),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ['tools'] })
+      qc.invalidateQueries({ queryKey: ['categories'] })
+      setImportPreview(null)
+      setImportSuccess(result.imported)
+      setTimeout(() => setImportSuccess(null), 5000)
+    },
+  })
+
   function handleAddCategory(e: React.FormEvent) {
     e.preventDefault()
     const name = newCategory.trim()
     if (!name) { setCatError('Enter a category name'); return }
     addCategoryMutation.mutate(name)
+  }
+
+  async function handleExport() {
+    const token = sessionStorage.getItem('admin_token')
+    const res = await fetch('/api/admin/export', {
+      headers: token ? { 'X-Admin-Token': token } : {},
+    })
+    if (!res.ok) { alert('Export failed'); return }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `cs-app-store-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const raw = JSON.parse(ev.target?.result as string)
+        setImportPreview({
+          tools: Array.isArray(raw.tools) ? raw.tools.length : 0,
+          categories: Array.isArray(raw.categories) ? raw.categories.length : 0,
+          raw,
+        })
+      } catch {
+        alert('Could not parse file — make sure it is a valid CS App Store export.')
+      }
+    }
+    reader.readAsText(file)
   }
 
   const toolCountByCategory = tools.reduce<Record<string, number>>((acc, t) => {
@@ -68,7 +126,7 @@ export default function AdminDashboard() {
 
       {/* Admin header bar */}
       <div style={{ background: 'var(--color-admin-bg)', borderBottom: '1px solid var(--color-admin-border)', padding: '14px 0' }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ fontSize: '1rem', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>
               Admin — Tool Management
@@ -77,7 +135,36 @@ export default function AdminDashboard() {
               {tools.length} tool{tools.length !== 1 ? 's' : ''} · {categories.length} categories
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={handleExport}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 12px', background: 'transparent', color: '#94a3b8',
+                border: '1px solid #334155', borderRadius: 'var(--radius-md)',
+                fontSize: '0.82rem', cursor: 'pointer',
+              }}
+            >
+              <Download size={13} /> Export
+            </button>
+            <button
+              onClick={() => importInputRef.current?.click()}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 12px', background: 'transparent', color: '#94a3b8',
+                border: '1px solid #334155', borderRadius: 'var(--radius-md)',
+                fontSize: '0.82rem', cursor: 'pointer',
+              }}
+            >
+              <Upload size={13} /> Import
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleImportFile}
+              style={{ display: 'none' }}
+            />
             <button
               onClick={logout}
               title="Sign out"
@@ -88,7 +175,7 @@ export default function AdminDashboard() {
                 fontSize: '0.85rem', cursor: 'pointer',
               }}
             >
-              <LogOut size={14} /> Sign out
+              <LogOut size={14} />
             </button>
             <Link
               to="/admin/new"
@@ -105,7 +192,22 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="container" style={{ padding: '32px 24px 60px' }}>
+      <div className="container" style={{ padding: '24px 24px 60px' }}>
+
+        {/* Import success banner */}
+        {importSuccess && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '12px 16px', marginBottom: 20,
+            background: 'rgba(0,217,126,0.08)', border: '1px solid rgba(0,217,126,0.25)',
+            borderRadius: 'var(--radius-md)',
+          }}>
+            <CheckCircle size={16} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
+            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+              Imported <strong>{importSuccess.tools}</strong> tool{importSuccess.tools !== 1 ? 's' : ''} and <strong>{importSuccess.categories}</strong> categor{importSuccess.categories !== 1 ? 'ies' : 'y'} successfully.
+            </span>
+          </div>
+        )}
 
         {/* Tools table */}
         {isLoading ? (
@@ -197,7 +299,6 @@ export default function AdminDashboard() {
           </div>
 
           <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-            {/* Add new category */}
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg)' }}>
               <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <input
@@ -234,7 +335,6 @@ export default function AdminDashboard() {
               </form>
             </div>
 
-            {/* Category list */}
             {categories.length === 0 ? (
               <div style={{ padding: '24px 20px', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                 No categories yet. Add one above.
@@ -268,14 +368,14 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => deleteCategoryMutation.mutate(cat.id)}
                         disabled={deleteCategoryMutation.isPending}
-                        title="Delete category"
+                        title="Remove category"
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 4,
                           padding: '4px 10px',
-                          border: '1px solid #fecaca',
-                          borderRadius: 'var(--radius-sm)', fontSize: '0.75rem',
-                          color: 'var(--color-danger)', background: 'var(--color-danger-light)',
-                          cursor: 'pointer', opacity: deleteCategoryMutation.isPending ? 0.5 : 1,
+                          border: '1px solid #fecaca', borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.75rem', color: 'var(--color-danger)',
+                          background: 'var(--color-danger-light)', cursor: 'pointer',
+                          opacity: deleteCategoryMutation.isPending ? 0.5 : 1,
                         }}
                       >
                         <X size={11} /> Remove
@@ -286,52 +386,110 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
-
           <p style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-            Removing a category does not delete tools assigned to it — they keep their category label.
+            Removing a category does not delete tools assigned to it.
           </p>
         </div>
       </div>
 
-      {/* Delete tool confirmation modal */}
+      {/* ── Delete tool modal ──────────────────────────────────── */}
       {confirmDelete && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => setConfirmDelete(null)}
-        >
-          <div
-            style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: 'var(--shadow-lg)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16 }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <AlertTriangle size={18} color="var(--color-danger)" />
-              </div>
-              <div>
-                <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 6 }}>Delete tool?</h2>
-                <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-                  <strong>{confirmDelete.name}</strong> will be permanently removed. This cannot be undone.
-                </p>
-              </div>
+        <Modal onClose={() => setConfirmDelete(null)}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <AlertTriangle size={18} color="var(--color-danger)" />
             </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setConfirmDelete(null)}
-                style={{ padding: '8px 16px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(confirmDelete.id)}
-                disabled={deleteMutation.isPending}
-                style={{ padding: '8px 16px', border: 'none', borderRadius: 'var(--radius-md)', background: 'var(--color-danger)', color: '#fff', fontSize: '0.85rem', fontWeight: 600, cursor: deleteMutation.isPending ? 'not-allowed' : 'pointer', opacity: deleteMutation.isPending ? 0.7 : 1 }}
-              >
-                {deleteMutation.isPending ? 'Deleting…' : 'Yes, delete'}
-              </button>
+            <div>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 6 }}>Delete tool?</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                <strong>{confirmDelete.name}</strong> will be permanently removed. This cannot be undone.
+              </p>
             </div>
           </div>
-        </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <ModalBtn onClick={() => setConfirmDelete(null)}>Cancel</ModalBtn>
+            <button
+              onClick={() => deleteMutation.mutate(confirmDelete.id)}
+              disabled={deleteMutation.isPending}
+              style={{ padding: '8px 16px', border: 'none', borderRadius: 'var(--radius-md)', background: 'var(--color-danger)', color: '#fff', fontSize: '0.85rem', fontWeight: 600, cursor: deleteMutation.isPending ? 'not-allowed' : 'pointer', opacity: deleteMutation.isPending ? 0.7 : 1 }}
+            >
+              {deleteMutation.isPending ? 'Deleting…' : 'Yes, delete'}
+            </button>
+          </div>
+        </Modal>
       )}
+
+      {/* ── Import confirm modal ───────────────────────────────── */}
+      {importPreview && (
+        <Modal onClose={() => setImportPreview(null)}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(77,159,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Upload size={17} color="#4D9FFF" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 6 }}>Import store data?</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.55, marginBottom: 12 }}>
+                This will <strong>replace all existing tools and categories</strong> with the contents of the import file. This cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <StatChip label="Tools" value={importPreview.tools} />
+                <StatChip label="Categories" value={importPreview.categories} />
+              </div>
+            </div>
+          </div>
+          {importMutation.isError && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--color-danger)', marginBottom: 12 }}>
+              {(importMutation.error as Error).message}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <ModalBtn onClick={() => setImportPreview(null)}>Cancel</ModalBtn>
+            <button
+              onClick={() => importMutation.mutate(importPreview.raw)}
+              disabled={importMutation.isPending}
+              style={{ padding: '8px 16px', border: 'none', borderRadius: 'var(--radius-md)', background: '#4D9FFF', color: '#fff', fontSize: '0.85rem', fontWeight: 600, cursor: importMutation.isPending ? 'not-allowed' : 'pointer', opacity: importMutation.isPending ? 0.7 : 1 }}
+            >
+              {importMutation.isPending ? 'Importing…' : 'Replace & import'}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', padding: '28px 32px', maxWidth: 440, width: '90%', boxShadow: 'var(--shadow-lg)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function ModalBtn({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ padding: '8px 16px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function StatChip({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{ padding: '6px 14px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+      <div style={{ fontSize: '1.1rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)' }}>{value}</div>
+      <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
     </div>
   )
 }
@@ -340,15 +498,7 @@ function EmptyState() {
   return (
     <div style={{ textAlign: 'center', padding: '60px 0' }}>
       <p style={{ color: 'var(--color-text-muted)', marginBottom: 16 }}>No tools yet.</p>
-      <Link
-        to="/admin/new"
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '10px 20px', background: 'var(--color-primary)',
-          color: '#fff', borderRadius: 'var(--radius-md)',
-          fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem',
-        }}
-      >
+      <Link to="/admin/new" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'var(--color-primary)', color: '#fff', borderRadius: 'var(--radius-md)', fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem' }}>
         <Plus size={15} /> Add your first tool
       </Link>
     </div>

@@ -21,6 +21,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  admin: {
+    import: (data: unknown) =>
+      request<{ imported: { tools: number; categories: number } }>(
+        '/api/admin/import',
+        { method: 'POST', body: JSON.stringify(data) }
+      ),
+  },
   tools: {
     list: () => request<Tool[]>('/api/tools'),
     get: (id: string) => request<Tool>(`/api/tools/${id}`),
