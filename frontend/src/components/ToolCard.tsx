@@ -1,16 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Terminal, Monitor, Globe } from 'lucide-react'
 import type { Tool } from '../types'
-import type { JSX } from 'react'
 import { TypeBadge } from './Badge'
 import { getCategoryMeta } from '../categoryConfig'
-
-const TYPE_ICON: Record<string, JSX.Element> = {
-  cli:     <Terminal size={16} />,
-  desktop: <Monitor  size={16} />,
-  webapp:  <Globe    size={16} />,
-}
 
 interface Props { tool: Tool; index: number }
 
@@ -47,7 +39,7 @@ export default function ToolCard({ tool, index }: Props) {
 
         <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
 
-          {/* Icon + type badge */}
+          {/* Category icon + type badge */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
             <div style={{
               width: 36, height: 36, borderRadius: 'var(--r-md)',
@@ -56,7 +48,7 @@ export default function ToolCard({ tool, index }: Props) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: accent, flexShrink: 0,
             }}>
-              {TYPE_ICON[tool.type] ?? <Terminal size={16} />}
+              <CategoryIcon size={16} strokeWidth={2} />
             </div>
             <TypeBadge type={tool.type} />
           </div>
