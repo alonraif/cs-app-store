@@ -2,6 +2,11 @@ import { PrismaClient, ToolType } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+const defaultCategories = [
+  'Diagnostics', 'Monitoring', 'Automation', 'Networking',
+  'Security', 'DevOps', 'QA', 'Analytics',
+]
+
 const tools = [
   {
     name: 'net-probe',
@@ -248,6 +253,14 @@ A desktop GUI for flashing official and experimental firmware images to LiveU ha
 ]
 
 async function main() {
+  const catCount = await prisma.category.count()
+  if (catCount === 0) {
+    for (const name of defaultCategories) {
+      await prisma.category.create({ data: { name } })
+    }
+    console.log(`Seeded ${defaultCategories.length} categories.`)
+  }
+
   const count = await prisma.tool.count()
   if (count > 0) {
     console.log(`Database already has ${count} tools — skipping seed.`)

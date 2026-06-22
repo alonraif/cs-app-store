@@ -20,6 +20,8 @@ const toolSchema = z
     repoUrl: z.string().optional(),
     downloadUrl: z.string().optional(),
     launchUrl: z.string().optional(),
+    installationInstructions: z.string().optional(),
+    usageInstructions: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.type === 'cli' && !data.installCommand?.trim()) {

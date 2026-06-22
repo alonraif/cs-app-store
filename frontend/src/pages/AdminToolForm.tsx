@@ -5,7 +5,7 @@ import { ArrowLeft, Upload, X, Loader } from 'lucide-react'
 import Header from '../components/Header'
 import { api } from '../api/client'
 import { CATEGORIES, TYPE_LABELS } from '../types'
-import type { Tool, ToolFormData, ToolType } from '../types'
+import type { Tool, ToolFormData, ToolType, Category } from '../types'
 
 const EMPTY: ToolFormData = {
   name: '',
@@ -21,6 +21,8 @@ const EMPTY: ToolFormData = {
   repoUrl: '',
   downloadUrl: '',
   launchUrl: '',
+  installationInstructions: '',
+  usageInstructions: '',
 }
 
 export default function AdminToolForm() {
@@ -36,7 +38,12 @@ export default function AdminToolForm() {
   const screenshotRef = useRef<HTMLInputElement>(null)
   const installerRef = useRef<HTMLInputElement>(null)
 
-  // Load existing tool for edit
+  const { data: categoriesData = [] } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: api.categories.list,
+  })
+  const categoryNames = categoriesData.length > 0 ? categoriesData.map(c => c.name) : CATEGORIES
+
   const { data: existingTool } = useQuery<Tool>({
     queryKey: ['tools', id],
     queryFn: () => api.tools.get(id!),
@@ -59,6 +66,8 @@ export default function AdminToolForm() {
       repoUrl: existingTool.repoUrl ?? '',
       downloadUrl: existingTool.downloadUrl ?? '',
       launchUrl: existingTool.launchUrl ?? '',
+      installationInstructions: existingTool.installationInstructions ?? '',
+      usageInstructions: existingTool.usageInstructions ?? '',
     })
     setScreenshotPreviews(existingTool.screenshots)
   }, [existingTool])
@@ -107,8 +116,7 @@ export default function AdminToolForm() {
     setUploading('screenshots')
     try {
       const paths = await api.uploads.screenshots(files)
-      const previews = paths
-      setScreenshotPreviews((p) => [...p, ...previews])
+      setScreenshotPreviews((p) => [...p, ...paths])
       set('screenshots', [...form.screenshots, ...paths])
     } catch {
       alert('Screenshot upload failed')
@@ -142,14 +150,7 @@ export default function AdminToolForm() {
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <Header />
 
-      {/* Admin header */}
-      <div
-        style={{
-          background: 'var(--color-admin-bg)',
-          borderBottom: '1px solid var(--color-admin-border)',
-          padding: '14px 0',
-        }}
-      >
+      <div style={{ background: 'var(--color-admin-bg)', borderBottom: '1px solid var(--color-admin-border)', padding: '14px 0' }}>
         <div className="container">
           <h1 style={{ fontSize: '1rem', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>
             {isEdit ? 'Edit Tool' : 'Add New Tool'}
@@ -158,18 +159,7 @@ export default function AdminToolForm() {
       </div>
 
       <div className="container" style={{ padding: '32px 24px 80px', maxWidth: 760 }}>
-        <Link
-          to="/admin"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            color: 'var(--color-text-secondary)',
-            fontSize: '0.85rem',
-            marginBottom: 24,
-            textDecoration: 'none',
-          }}
-        >
+        <Link to="/admin" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--color-text-secondary)', fontSize: '0.85rem', marginBottom: 24, textDecoration: 'none' }}>
           <ArrowLeft size={15} /> Back to admin
         </Link>
 
@@ -200,12 +190,7 @@ export default function AdminToolForm() {
                 value={form.longDescription}
                 onChange={(e) => set('longDescription', e.target.value)}
                 rows={10}
-                style={{
-                  ...inputStyle(false),
-                  resize: 'vertical',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.82rem',
-                }}
+                style={{ ...inputStyle(false), resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}
               />
             </Field>
 
@@ -216,7 +201,7 @@ export default function AdminToolForm() {
                   onChange={(e) => set('category', e.target.value)}
                   style={inputStyle(!!errors.category)}
                 >
-                  {CATEGORIES.map((c) => (
+                  {categoryNames.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
@@ -234,6 +219,28 @@ export default function AdminToolForm() {
                 </select>
               </Field>
             </div>
+
+            <Field label="Usage instructions (Markdown — how to use this tool)">
+              <textarea
+                value={form.usageInstructions}
+                onChange={(e) => set('usageInstructions', e.target.value)}
+                rows={6}
+                placeholder="Describe how to use this tool, common workflows, options, examples…"
+                style={{ ...inputStyle(false), resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}
+              />
+            </Field>
+
+            {form.type === 'desktop' && (
+              <Field label="Installation instructions (Markdown — for desktop apps)">
+                <textarea
+                  value={form.installationInstructions}
+                  onChange={(e) => set('installationInstructions', e.target.value)}
+                  rows={6}
+                  placeholder="Step-by-step installation instructions, system requirements, post-install setup…"
+                  style={{ ...inputStyle(false), resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}
+                />
+              </Field>
+            )}
           </Section>
 
           <Section title="Ownership">
@@ -315,12 +322,7 @@ export default function AdminToolForm() {
                     {uploading === 'installer' ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Upload size={14} />}
                     Upload file
                   </button>
-                  <input
-                    ref={installerRef}
-                    type="file"
-                    onChange={handleInstallerUpload}
-                    style={{ display: 'none' }}
-                  />
+                  <input ref={installerRef} type="file" onChange={handleInstallerUpload} style={{ display: 'none' }} />
                 </div>
                 {form.downloadUrl && (
                   <p style={{ fontSize: '0.78rem', color: 'var(--color-success)', marginTop: 6 }}>
@@ -348,14 +350,7 @@ export default function AdminToolForm() {
           {/* Screenshots */}
           <Section title="Screenshots">
             <div
-              style={{
-                border: '2px dashed var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                marginBottom: screenshotPreviews.length ? 16 : 0,
-              }}
+              style={{ border: '2px dashed var(--color-border)', borderRadius: 'var(--radius-md)', padding: '20px', textAlign: 'center', cursor: 'pointer', marginBottom: screenshotPreviews.length ? 16 : 0 }}
               onClick={() => screenshotRef.current?.click()}
             >
               {uploading === 'screenshots' ? (
@@ -369,49 +364,17 @@ export default function AdminToolForm() {
                 </>
               )}
             </div>
-            <input
-              ref={screenshotRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleScreenshotUpload}
-              style={{ display: 'none' }}
-            />
+            <input ref={screenshotRef} type="file" accept="image/*" multiple onChange={handleScreenshotUpload} style={{ display: 'none' }} />
 
             {screenshotPreviews.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
                 {screenshotPreviews.map((src, i) => (
                   <div key={i} style={{ position: 'relative' }}>
-                    <img
-                      src={src}
-                      alt=""
-                      style={{
-                        width: '100%',
-                        aspectRatio: '16/9',
-                        objectFit: 'cover',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--color-border)',
-                      }}
-                    />
+                    <img src={src} alt="" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }} />
                     <button
                       type="button"
                       onClick={() => removeScreenshot(i)}
-                      style={{
-                        position: 'absolute',
-                        top: 4,
-                        right: 4,
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.6)',
-                        border: 'none',
-                        color: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        padding: 0,
-                      }}
+                      style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
                     >
                       <X size={12} />
                     </button>
@@ -425,36 +388,14 @@ export default function AdminToolForm() {
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 8 }}>
             <Link
               to="/admin"
-              style={{
-                padding: '10px 20px',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--color-text-secondary)',
-                fontSize: '0.875rem',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
+              style={{ padding: '10px 20px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text-secondary)', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={saveMutation.isPending}
-              style={{
-                padding: '10px 24px',
-                background: 'var(--color-primary)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                cursor: saveMutation.isPending ? 'not-allowed' : 'pointer',
-                opacity: saveMutation.isPending ? 0.7 : 1,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
+              style={{ padding: '10px 24px', background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 600, cursor: saveMutation.isPending ? 'not-allowed' : 'pointer', opacity: saveMutation.isPending ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: 8 }}
             >
               {saveMutation.isPending && <Loader size={14} />}
               {isEdit ? 'Save changes' : 'Create tool'}
@@ -474,22 +415,8 @@ export default function AdminToolForm() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        background: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        overflow: 'hidden',
-        marginBottom: 20,
-      }}
-    >
-      <div
-        style={{
-          padding: '12px 20px',
-          borderBottom: '1px solid var(--color-border)',
-          background: 'var(--color-bg)',
-        }}
-      >
+    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: 20 }}>
+      <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg)' }}>
         <h2 style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
           {title}
         </h2>
@@ -501,15 +428,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}) {
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
@@ -536,15 +455,9 @@ function inputStyle(hasError: boolean): React.CSSProperties {
 }
 
 const uploadBtnStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '8px 14px',
-  border: '1.5px solid var(--color-border)',
-  borderRadius: 'var(--radius-md)',
-  background: 'var(--color-surface)',
-  fontSize: '0.82rem',
-  color: 'var(--color-text-secondary)',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  padding: '8px 14px', border: '1.5px solid var(--color-border)',
+  borderRadius: 'var(--radius-md)', background: 'var(--color-surface)',
+  fontSize: '0.82rem', color: 'var(--color-text-secondary)',
+  cursor: 'pointer', whiteSpace: 'nowrap',
 }

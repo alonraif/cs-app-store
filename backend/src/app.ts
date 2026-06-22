@@ -4,6 +4,7 @@ import path from 'path'
 import toolsRouter from './routes/tools'
 import uploadsRouter from './routes/uploads'
 import adminRouter from './routes/admin'
+import categoriesRouter from './routes/categories'
 import { errorHandler } from './middleware/errorHandler'
 
 const app = express()
@@ -24,6 +25,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/admin', adminRouter)
 app.use('/api/tools', toolsRouter)
 app.use('/api/uploads', uploadsRouter)
+app.use('/api/categories', categoriesRouter)
 
 app.use(errorHandler)
 

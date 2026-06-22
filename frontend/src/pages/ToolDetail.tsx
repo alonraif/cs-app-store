@@ -94,6 +94,24 @@ export default function ToolDetail() {
                 </div>
               </section>
             )}
+
+            {tool.type === 'desktop' && tool.installationInstructions && (
+              <section style={{ marginTop: 36 }}>
+                <SectionLabel>Installation</SectionLabel>
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '24px 28px' }}>
+                  <MarkdownContent content={tool.installationInstructions} />
+                </div>
+              </section>
+            )}
+
+            {tool.usageInstructions && (
+              <section style={{ marginTop: 36 }}>
+                <SectionLabel>Usage</SectionLabel>
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '24px 28px' }}>
+                  <MarkdownContent content={tool.usageInstructions} />
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Sidebar */}

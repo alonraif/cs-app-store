@@ -1,5 +1,10 @@
 export type ToolType = 'cli' | 'desktop' | 'webapp'
 
+export interface Category {
+  id: string
+  name: string
+}
+
 export interface Tool {
   id: string
   name: string
@@ -15,6 +20,8 @@ export interface Tool {
   repoUrl: string | null
   downloadUrl: string | null
   launchUrl: string | null
+  installationInstructions: string | null
+  usageInstructions: string | null
   createdAt: string
   updatedAt: string
 }
@@ -33,6 +40,8 @@ export interface ToolFormData {
   repoUrl: string
   downloadUrl: string
   launchUrl: string
+  installationInstructions: string
+  usageInstructions: string
 }
 
 export const CATEGORIES = [

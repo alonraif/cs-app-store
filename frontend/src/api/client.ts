@@ -1,4 +1,4 @@
-import type { Tool, ToolFormData } from '../types'
+import type { Tool, ToolFormData, Category } from '../types'
 
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
 
@@ -30,6 +30,13 @@ export const api = {
       request<Tool>(`/api/tools/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) =>
       request<void>(`/api/tools/${id}`, { method: 'DELETE' }),
+  },
+  categories: {
+    list: () => request<Category[]>('/api/categories'),
+    create: (name: string) =>
+      request<Category>('/api/categories', { method: 'POST', body: JSON.stringify({ name }) }),
+    delete: (id: string) =>
+      request<void>(`/api/categories/${id}`, { method: 'DELETE' }),
   },
   uploads: {
     screenshots: async (files: File[]): Promise<string[]> => {
